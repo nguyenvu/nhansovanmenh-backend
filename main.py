@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 import sqlite3
 import os
+import chromadb
 
 from fastapi.staticfiles import StaticFiles
 app = FastAPI()
@@ -27,6 +28,12 @@ def init_db():
     conn.close()
 
 init_db()
+
+client = chromadb.CloudClient(
+    api_key="your_api_key_here",  # Thay bằng API key thực tế
+    tenant="your_tenant_id_here"  # Thay bằng tenant ID thực tế
+    database="your_database_name_here"  # Thay bằng tên database thực tế
+)
 
 class User(BaseModel):
     full_name: str

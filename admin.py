@@ -60,6 +60,15 @@ def admin_page(request: Request, username: str = Depends(authenticate)):
 def delete_user(user_id: int, username: str = Depends(authenticate)):
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
+    cursor.execute("SELECT front_image_url, side_image_url FROM users WHERE id=?", (user_id,))
+    img_row = cursor.fetchone()
+    if img_row:
+        for img_path in img_row:
+            if img_path and os.path.exists(img_path):
+                try:
+                    os.remove(img_path)
+                except Exception:
+                    pass
     cursor.execute("DELETE FROM users WHERE id=?", (user_id,))
     conn.commit()
     conn.close()

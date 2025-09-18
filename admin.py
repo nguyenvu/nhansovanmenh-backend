@@ -49,7 +49,9 @@ def admin_page(request: Request, username: str = Depends(authenticate)):
     <table><tr><th>ID</th><th>Name</th><th>Birth Date</th><th>Birth Time</th><th>Front Image</th><th>Side Image</th><th>Actions</th></tr>
     """
     for user in users:
-        html += f"<tr><td>{user[0]}</td><td>{user[1]}</td><td>{user[2]}</td><td>{user[3]}</td><td>{user[4]}</td><td>{user[5]}</td>"
+        front_img_html = f"<img src='/{user[4]}' alt='Front' style='max-width:100px;max-height:100px;'/>" if user[4] else ""
+        side_img_html = f"<img src='/{user[5]}' alt='Side' style='max-width:100px;max-height:100px;'/>" if user[5] else ""
+        html += f"<tr><td>{user[0]}</td><td>{user[1]}</td><td>{user[2]}</td><td>{user[3]}</td><td>{front_img_html}</td><td>{side_img_html}"
         html += f"<td><a class='btn' href='/admin/edit/{user[0]}'>Edit</a> <a class='btn' href='/admin/delete/{user[0]}'>Delete</a></td></tr>"
     html += "</table><br><a class='btn' href='/admin/add'>Add New User</a></body></html>"
     return HTMLResponse(content=html)

@@ -30,9 +30,9 @@ def init_db():
 init_db()
 
 client = chromadb.CloudClient(
-    api_key="your_api_key_here",  # Thay bằng API key thực tế
-    tenant="your_tenant_id_here"  # Thay bằng tenant ID thực tế
-    database="your_database_name_here"  # Thay bằng tên database thực tế
+  api_key='ck-7kxtfDFWTj5Ng2ntkaXaR58RGyYYQRYSV35owXh9uJXr',
+  tenant='071b8d1f-5f7f-4021-96a4-93a218851ab7',
+  database='NhanTuongVanMenh'
 )
 
 class User(BaseModel):

@@ -30,24 +30,29 @@ class User(BaseModel):
     full_name: str
     birth_date: str
     birth_time: str
-    front_image_url: Optional[str] = None
-    side_image_url: Optional[str] = None
+    # Không nhận front_image_url, side_image_url từ client khi tạo user
 
 class UserInDB(User):
     id: int
+    front_image_url: Optional[str] = None
+    side_image_url: Optional[str] = None
 
 @app.post("/users/", response_model=UserInDB)
 def create_user(user: User):
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
+    # Khi tạo user, chưa có ảnh nên front_image_url, side_image_url là None
     cursor.execute(
         "INSERT INTO users (full_name, birth_date, birth_time, front_image_url, side_image_url) VALUES (?, ?, ?, ?, ?)",
-        (user.full_name, user.birth_date, user.birth_time, user.front_image_url, user.side_image_url)
+        (user.full_name, user.birth_date, user.birth_time, None, None)
     )
     conn.commit()
     user_id = cursor.lastrowid
+    # Trả về thông tin user, ảnh là None
+    cursor.execute("SELECT id, full_name, birth_date, birth_time, front_image_url, side_image_url FROM users WHERE id=?", (user_id,))
+    row = cursor.fetchone()
     conn.close()
-    return UserInDB(id=user_id, **user.dict())
+    return UserInDB(id=row[0], full_name=row[1], birth_date=row[2], birth_time=row[3], front_image_url=row[4], side_image_url=row[5])
 
 @app.get("/users/", response_model=List[UserInDB])
 def get_users():

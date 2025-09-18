@@ -4,7 +4,9 @@ from typing import List, Optional
 import sqlite3
 import os
 
+from fastapi.staticfiles import StaticFiles
 app = FastAPI()
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 DB_NAME = "users.db"
 

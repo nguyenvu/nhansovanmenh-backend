@@ -1,7 +1,8 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from typing import List, Optional
 import sqlite3
+import os
 
 app = FastAPI()
 
@@ -56,6 +57,34 @@ def get_users():
     rows = cursor.fetchall()
     conn.close()
     return [UserInDB(id=row[0], full_name=row[1], birth_date=row[2], birth_time=row[3], front_image_url=row[4], side_image_url=row[5]) for row in rows]
+
+
+# Endpoint upload ảnh mặt trước/mặt bên
+@app.post("/upload/{image_type}/")
+async def upload_image(image_type: str, user_id: int, file: UploadFile = File(...)):
+    if image_type not in ["front", "side"]:
+        raise HTTPException(status_code=400, detail="Invalid image type")
+    upload_dir = "uploads"
+    os.makedirs(upload_dir, exist_ok=True)
+    filename = f"{image_type}_{user_id}_{file.filename}"
+    file_path = os.path.join(upload_dir, filename)
+    with open(file_path, "wb") as f:
+        f.write(await file.read())
+    # Kiểm tra user tồn tại
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM users WHERE id=?", (user_id,))
+    if not cursor.fetchone():
+        conn.close()
+        raise HTTPException(status_code=404, detail=r"User not found")
+    # Cập nhật đường dẫn ảnh vào DB
+    if image_type == "front":
+        cursor.execute("UPDATE users SET front_image_url=? WHERE id=?", (file_path, user_id))
+    elif image_type == "side":
+        cursor.execute("UPDATE users SET side_image_url=? WHERE id=?", (file_path, user_id))
+    conn.commit()
+    conn.close()
+    return {"file_path": file_path}
 
 @app.get("/users/{user_id}", response_model=UserInDB)
 def get_user(user_id: int):

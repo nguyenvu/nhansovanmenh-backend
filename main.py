@@ -5,7 +5,7 @@ import sqlite3
 import os
 from fastapi.staticfiles import StaticFiles
 from deepface import DeepFace
-
+from fastapi.responses import JSONResponse
 app = FastAPI()
 app.mount("/uploads", StaticFiles(directory=os.path.abspath("uploads")), name="uploads")
 
@@ -162,3 +162,21 @@ def get_user(user_id: int):
         return UserInDB(id=row[0], full_name=row[1], birth_date=row[2], birth_time=row[3], front_image_url=row[4], side_image_url=row[5])
     else:
         raise HTTPException(status_code=404, detail="User not found")
+    
+
+# API trả kết quả nhận diện khuôn mặt (front) cho user
+@app.get("/face-result/{user_id}")
+def get_face_result(user_id: int):
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("SELECT front_age, front_gender, front_dominant_race FROM users WHERE id=?", (user_id,))
+    row = cursor.fetchone()
+    conn.close()
+    if not row:
+        return JSONResponse(status_code=404, content={"error": "User not found"})
+    return {
+        "user_id": user_id,
+        "front_age": row[0],
+        "front_gender": row[1],
+        "front_race": row[2]
+    }

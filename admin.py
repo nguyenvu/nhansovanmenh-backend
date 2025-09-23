@@ -4,10 +4,12 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.responses import HTMLResponse, RedirectResponse
 import secrets
 import sqlite3
+from fastapi.templating import Jinja2Templates
 
 app = FastAPI()
 security = HTTPBasic()
 DB_NAME = "users.db"
+templates = Jinja2Templates(directory="templates")
 
 ADMIN_USERNAME = "admin123"
 ADMIN_PASSWORD = "admin123"
@@ -28,39 +30,13 @@ def authenticate(credentials: HTTPBasicCredentials = Depends(security)):
 def admin_page(request: Request, username: str = Depends(authenticate)):
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-    cursor.execute("SELECT id, full_name, birth_date, birth_time, front_image_url, side_image_url FROM users")
+    cursor.execute("SELECT id, full_name, birth_date, birth_time, front_image_url, side_image_url, front_age, front_gender, front_dominant_race, front_dominant_emotion, front_comment, side_age, side_gender, side_dominant_race, side_dominant_emotion, side_comment FROM users")
     users = cursor.fetchall()
     conn.close()
-    html = """
-    <html><head><title>Admin - User Management</title>
-    <style>
-    body { font-family: Arial, sans-serif; background: #f7f7f7; margin: 0; padding: 20px; }
-    h2 { color: #2c3e50; }
-    table { border-collapse: collapse; width: 100%; background: #fff; box-shadow: 0 2px 8px #ccc; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-    th { background: #4a90e2; color: #fff; }
-    tr:nth-child(even) { background: #f2f2f2; }
-    a { color: #2980b9; text-decoration: none; margin: 0 5px; }
-    a:hover { text-decoration: underline; }
-    .btn { background: #4a90e2; color: #fff; padding: 6px 12px; border-radius: 4px; text-decoration: none; }
-    .btn:hover { background: #357ab8; }
-    </style>
-    </head><body>
-    <h2>User List</h2>
-    <table><tr><th>ID</th><th>Name</th><th>Birth Date</th><th>Birth Time</th><th>Front Image</th><th>Side Image</th><th>Actions</th></tr>
-    """
-    for user in users:
-        def get_img_url(path):
-            if not path:
-                return ""
-            fname = os.path.basename(path)
-            return f"/uploads/{fname}"
-        front_img_html = f"<img src='{get_img_url(user[4])}' alt='Front' style='max-width:100px;max-height:100px;'/>" if user[4] else ""
-        side_img_html = f"<img src='{get_img_url(user[5])}' alt='Side' style='max-width:100px;max-height:100px;'/>" if user[5] else ""
-        html += f"<tr><td>{user[0]}</td><td>{user[1]}</td><td>{user[2]}</td><td>{user[3]}</td><td>{front_img_html}</td><td>{side_img_html}"
-        html += f"<td><a class='btn' href='/admin/edit/{user[0]}'>Edit</a> <a class='btn' href='/admin/delete/{user[0]}'>Delete</a></td></tr>"
-    html += "</table><br><a class='btn' href='/admin/add'>Add New User</a></body></html>"
-    return HTMLResponse(content=html)
+    def basename(path):
+        return os.path.basename(path) if path else ""
+    # Jinja2 không có filter basename mặc định, truyền vào context
+    return templates.TemplateResponse("admin_list.html", {"request": request, "users": users, "basename": basename})
 
 @app.get("/admin/delete/{user_id}")
 def delete_user(user_id: int, username: str = Depends(authenticate)):

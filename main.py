@@ -3,13 +3,40 @@ from pydantic import BaseModel
 from typing import List, Optional
 import sqlite3
 import os
-import chromadb
-
 from fastapi.staticfiles import StaticFiles
+from deepface import DeepFace
+
 app = FastAPI()
 app.mount("/uploads", StaticFiles(directory=os.path.abspath("uploads")), name="uploads")
 
 DB_NAME = "users.db"
+
+
+def migrate_db():
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    columns = [
+        ("front_age", "INTEGER"),
+        ("front_gender", "TEXT"),
+        ("front_dominant_race", "TEXT"),
+        ("front_dominant_emotion", "TEXT"),
+        ("front_comment", "TEXT"),
+        ("side_age", "INTEGER"),
+        ("side_gender", "TEXT"),
+        ("side_dominant_race", "TEXT"),
+        ("side_dominant_emotion", "TEXT"),
+        ("side_comment", "TEXT")
+    ]
+    for col, coltype in columns:
+        try:
+            cursor.execute(f"ALTER TABLE users ADD COLUMN {col} {coltype}")
+        except sqlite3.OperationalError as e:
+            if f"duplicate column name: {col}" in str(e) or "already exists" in str(e):
+                pass  # Đã có cột này rồi
+            else:
+                raise
+    conn.commit()
+    conn.close()
 
 def init_db():
     conn = sqlite3.connect(DB_NAME)
@@ -26,14 +53,10 @@ def init_db():
     ''')
     conn.commit()
     conn.close()
+    migrate_db()
 
 init_db()
 
-client = chromadb.CloudClient(
-  api_key='ck-7kxtfDFWTj5Ng2ntkaXaR58RGyYYQRYSV35owXh9uJXr',
-  tenant='071b8d1f-5f7f-4021-96a4-93a218851ab7',
-  database='NhanTuongVanMenh'
-)
 
 class User(BaseModel):
     full_name: str
@@ -81,9 +104,14 @@ async def upload_image(image_type: str, user_id: int, file: UploadFile = File(..
     upload_dir = "uploads"
     os.makedirs(upload_dir, exist_ok=True)
     filename = f"{image_type}_{user_id}_{file.filename}"
-    file_path = os.path.join(upload_dir, filename)
+    file_path = os.path.abspath(os.path.join(upload_dir, filename))
     with open(file_path, "wb") as f:
         f.write(await file.read())
+    # Kiểm tra file tồn tại và log đường dẫn sau khi ghi file
+    if not os.path.exists(file_path):
+        error = f"File not found: {file_path}"
+        return {"file_path": file_path, "deepface_result": None, "error": error}
+    print(f"[DeepFace] Đang phân tích file: {file_path}")
     # Kiểm tra user tồn tại
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
@@ -91,14 +119,37 @@ async def upload_image(image_type: str, user_id: int, file: UploadFile = File(..
     if not cursor.fetchone():
         conn.close()
         raise HTTPException(status_code=404, detail=r"User not found")
-    # Cập nhật đường dẫn ảnh vào DB
+    # Phân tích khuôn mặt bằng DeepFace
+    error = None
+    result = {}
+    try:
+        analysis = DeepFace.analyze(img_path=file_path, actions=["age", "gender", "race", "emotion"], enforce_detection=False)
+        if isinstance(analysis, list):
+            analysis = analysis[0]
+        result = {
+            "age": analysis.get("age"),
+            "gender": analysis.get("dominant_gender", analysis.get("gender")),
+            "dominant_race": analysis.get("dominant_race"),
+            "dominant_emotion": analysis.get("dominant_emotion"),
+            "comment": f"Khuôn mặt dự đoán: tuổi {analysis.get('age')}, giới tính {analysis.get('dominant_gender', analysis.get('gender'))}, sắc tộc {analysis.get('dominant_race')}, cảm xúc {analysis.get('dominant_emotion')}"
+        }
+    except Exception as e:
+        error = str(e)
+        result = {"age": None, "gender": None, "dominant_race": None, "dominant_emotion": None, "comment": None, "error": error}
+    # Cập nhật đường dẫn ảnh và kết quả DeepFace vào DB
     if image_type == "front":
-        cursor.execute("UPDATE users SET front_image_url=? WHERE id=?", (file_path, user_id))
+        cursor.execute("UPDATE users SET front_image_url=?, front_age=?, front_gender=?, front_dominant_race=?, front_dominant_emotion=?, front_comment=? WHERE id=?",
+            (file_path, result.get("age"), result.get("gender"), result.get("dominant_race"), result.get("dominant_emotion"), result.get("comment"), user_id))
     elif image_type == "side":
-        cursor.execute("UPDATE users SET side_image_url=? WHERE id=?", (file_path, user_id))
+        cursor.execute("UPDATE users SET side_image_url=?, side_age=?, side_gender=?, side_dominant_race=?, side_dominant_emotion=?, side_comment=? WHERE id=?",
+            (file_path, result.get("age"), result.get("gender"), result.get("dominant_race"), result.get("dominant_emotion"), result.get("comment"), user_id))
     conn.commit()
     conn.close()
-    return {"file_path": file_path}
+    return {
+        "file_path": file_path,
+        "deepface_result": result,
+        "error": error
+    }
 
 @app.get("/users/{user_id}", response_model=UserInDB)
 def get_user(user_id: int):

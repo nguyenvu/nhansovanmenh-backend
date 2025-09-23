@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin - User Management</title>
+    <style>
+    body { font-family: Arial, sans-serif; background: #f7f7f7; margin: 0; padding: 20px; }
+    h2 { color: #2c3e50; }
+    table { border-collapse: collapse; width: 100%; background: #fff; box-shadow: 0 2px 8px #ccc; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+    th { background: #4a90e2; color: #fff; }
+    tr:nth-child(even) { background: #f2f2f2; }
+    a { color: #2980b9; text-decoration: none; margin: 0 5px; }
+    a:hover { text-decoration: underline; }
+    .btn { background: #4a90e2; color: #fff; padding: 6px 12px; border-radius: 4px; text-decoration: none; }
+    .btn:hover { background: #357ab8; }
+    img { max-width:100px;max-height:100px; }
+    </style>
+</head>
+<body>
+    <h2>User List</h2>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Birth Date</th>
+            <th>Birth Time</th>
+            <th>Front Image</th>
+            <th>Side Image</th>
+            <th>Front Age</th>
+            <th>Front Gender</th>
+            <th>Front Race</th>
+            <th>Front Emotion</th>
+            <th>Front Comment</th>
+            <th>Side Age</th>
+            <th>Side Gender</th>
+            <th>Side Race</th>
+            <th>Side Emotion</th>
+            <th>Side Comment</th>
+            <th>Actions</th>
+        </tr>
+        {% for user in users %}
+        <tr>
+            <td>{{ user[0] }}</td>
+            <td>{{ user[1] }}</td>
+            <td>{{ user[2] }}</td>
+            <td>{{ user[3] }}</td>
+            <td>{% if user[4] %}<img src="http://localhost:8000/uploads/{{ basename(user[4]) }}" alt="Front" />{% endif %}</td>
+            <td>{% if user[5] %}<img src="http://localhost:8000/uploads/{{ basename(user[5]) }}" alt="Side" />{% endif %}</td>
+            <td>{{ user[6] }}</td>
+            <td>{{ user[7] }}</td>
+            <td>{{ user[8] }}</td>
+            <td>{{ user[9] }}</td>
+            <td>{{ user[10] }}</td>
+            <td>{{ user[11] }}</td>
+            <td>{{ user[12] }}</td>
+            <td>{{ user[13] }}</td>
+            <td>{{ user[14] }}</td>
+            <td>{{ user[15] }}</td>
+            <td>{{ user[16] }}</td>
+            <td>
+                <a class="btn" href="/admin/edit/{{ user[0] }}">Edit</a>
+                <a class="btn" href="/admin/delete/{{ user[0] }}">Delete</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    <br>
+    <a class="btn" href="/admin/add">Add New User</a>
+</body>
+</html>

@@ -1,5 +1,9 @@
 fastapi
 uvicorn
 openai
-chromadb
+deepface
+opencv-python
+tensorflow
+keras
+dlib
 #pip install -r requirements.txt

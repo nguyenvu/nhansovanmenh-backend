@@ -4,9 +4,10 @@ FROM python:3.11-slim
 # Set work directory
 WORKDIR /app
 
-# Install system dependencies (for opencv, dlib, etc.)
+# Install system dependencies (for opencv, dlib, etc.) and upgrade all packages
 RUN apt-get update && \
-    apt-get install -y build-essential cmake libglib2.0-0 libsm6 libxrender1 libxext6 libgtk2.0-dev pkg-config libboost-all-dev && \
+    apt-get install -y --no-install-recommends build-essential cmake libglib2.0-0 libsm6 libxrender1 libxext6 libgtk2.0-dev pkg-config libboost-all-dev && \
+    apt-get upgrade -y && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install
@@ -20,5 +21,5 @@ COPY . .
 # Expose port
 
 # Run the app
-EXPOSE 80
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "80"]
+EXPOSE 8080
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]

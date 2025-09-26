@@ -1,13 +1,14 @@
 # Dockerfile for FastAPI + Uvicorn + requirements
-FROM python:3.11-slim
+FROM python:3.11.8-slim-bullseye
 
 # Set work directory
 WORKDIR /app
 
 # Install system dependencies (for opencv, dlib, etc.) and upgrade all packages
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends build-essential cmake libglib2.0-0 libsm6 libxrender1 libxext6 libgtk2.0-dev pkg-config libboost-all-dev && \
     apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends build-essential cmake libglib2.0-0 libsm6 libxrender1 libxext6 libgtk2.0-dev pkg-config libboost-all-dev && \
+    apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install

@@ -1,0 +1,25 @@
+# Byte-compiled / optimized / compiled files
+__pycache__/
+*.pyc
+*.pyd
+*.pyo
+*.egg-info/
+.pytest_cache/
+
+# Distribution / packaging
+dist/
+build/
+*.egg
+*.whl
+
+# Editors
+.vscode/
+.idea/
+.code-workspace
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Virtual environment
+venv/
+env/

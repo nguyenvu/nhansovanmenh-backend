@@ -17,9 +17,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 # Copy app code
 COPY . .
-
-# Expose port
-
+    
 # Run the app
 EXPOSE 8080
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]

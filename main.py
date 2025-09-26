@@ -180,3 +180,8 @@ def get_face_result(user_id: int):
         "front_gender": row[1],
         "front_race": row[2]
     }
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8080))  # Cloud Run sẽ truyền biến môi trường PORT
+    uvicorn.run(app, host="0.0.0.0", port=port)
